@@ -16,23 +16,23 @@ library(readr)
 library(tidyverse)
 library(lubridate)
 
-# Define our main dataframe
-structure <- data.frame(ID = character(),
-                        Incident_Num = double(),
-                        Incident_Type = character(),
-                        Occured_date_time = POSIXct(),
-                        Precinct = character(),
-                        Sector = character(),
-                        Beat = character(),
-                        Officer_ID = double(),
-                        Subject_ID = double(),
-                        Subject_Race = character(),
-                        Subject_Gender = character())
+# Define our main dataframe structure
+raw_data <- data.frame(ID = character(),
+                       Incident_Num = double(),
+                       Incident_Type = character(),
+                       Occured_date_time = POSIXct(),
+                       Precinct = character(),
+                       Sector = character(),
+                       Beat = character(),
+                       Officer_ID = double(),
+                       Subject_ID = double(),
+                       Subject_Race = character(),
+                       Subject_Gender = character())
 
 PAGE_SIZE <- 5000 # How big we want each page to be
 index <- 0 # The last processed record
 
-query_api <- function(df) {
+query_api <- function() {
   repeat {
       query <- paste("https://data.seattle.gov/resource/ppi5-g2bj.csv?",
                      "$order=uniqueid&",
@@ -72,19 +72,17 @@ query_api <- function(df) {
                Subject_Gender = subject_gender)
 
       # Bind our new data to the end of the main dataframe and remove duplicates (just incase)
-      df <- distinct(rbind(df, df_page), ID, .keep_all = TRUE)
+      raw_data <<- distinct(rbind(raw_data, df_page), ID, .keep_all = TRUE)
 
       # Increment index to the tail of df
-      index <<- nrow(df)
+      index <<- nrow(raw_data)
     }
-  return(df)
+  return(raw_data)
 }
 
-# Load Data
-Use_Of_Force <- query_api(structure)
-
-# Create New colums for year, month, day, hour, date from POSIX date time column
-Use_Of_Force <- Use_Of_Force %>%
+derive_columns <- function(df) {
+  # Create New colums for year, month, day, hour, date from POSIX date time column
+  df_tidy <- df %>%
     mutate(year = year(Occured_date_time),
            month = month(Occured_date_time, label = TRUE),
            day = wday(Occured_date_time, label = TRUE),
@@ -92,10 +90,15 @@ Use_Of_Force <- Use_Of_Force %>%
            date = as_date(Occured_date_time),
            weekday = strftime(Occured_date_time, format="%A", "UTC"),
            monthName = strftime(Occured_date_time, format="%B", "UTC"))
-Use_Of_Force$Incident_Type[Use_Of_Force$Incident_Type=="Level 1 - Use of Force"]<-"Level 1: Temporary Pain"
-Use_Of_Force$Incident_Type[Use_Of_Force$Incident_Type=="Level 2 - Use of Force"]<-"Level 2: Physical Injury"
-Use_Of_Force$Incident_Type[Use_Of_Force$Incident_Type=="Level 3 - Use of Force"]<-"Level 3: Substantial Injury"
-Use_Of_Force$Incident_Type[Use_Of_Force$Incident_Type=="Level 3 - OIS"]<-"Level 3 (IOS): Officer Involved Shooting"
+    df_tidy$Incident_Type <- recode(df_tidy$Incident_Type,
+                                    "Level 1 - Use of Force" = "Level 1: Temporary Pain",
+                                    "Level 2 - Use of Force" = "Level 2: Physical Injury",
+                                    "Level 3 - Use of Force" = "Level 3: Substantial Injury",
+                                    "Level 3 - OIS" = "Level 3 (IOS): Officer Involved Shooting")
+  return(df_tidy)
+}
+
+Use_Of_Force <- derive_columns(query_api())
 
 ForceLevels <- c("Level 1: Temporary Pain", "Level 2: Physical Injury", "Level 3: Substantial Injury", "Level 3 (IOS): Officer Involved Shooting")
 Weekdays <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday","Saturday","Sunday")
@@ -196,29 +199,38 @@ ui <- dashboardPage(
 
 server <- function(input, output, session) {
 
+  generate_df <- reactive({
+    invalidateLater(1.2e+6, session) # Reload every 20 minutes
+    #invalidateLater(1.5e+4, session) # Reload every 15 seconds
+
+    df <- derive_columns(query_api()) %>%
+      filter(hour >= input$hour[1] & hour <= input$hour[2]) %>%
+      filter(date >= input$date[1] & date <= input$date[2]) %>%
+      filter(monthName %in% input$months) %>%
+      filter(weekday %in% input$days) %>%
+      filter(Incident_Type %in% input$force) %>%
+      filter(Subject_Gender %in% input$gender) %>%
+      filter(Subject_Race %in% input$race) %>%
+      filter(Precinct %in% input$precinct) %>%
+      filter(Sector %in% input$sector) %>%
+      filter(Beat %in% input$beat)
+
+    result <- df
+  })
+
     output$menu <- renderMenu({
         sidebarMenu(
             menuItem("Menu item", icon = icon("calendar"))
         )
     })
-    output$forceByHour  <- renderPlot({
+    output$forceByHour <- renderPlot({
         
         
-        Use_Of_Force <- Use_Of_Force  %>%
-            filter(hour >= input$hour[1] & hour <= input$hour[2]) %>%
-            filter(date >= input$date[1] & date <= input$date[2]) %>%
-            filter(monthName %in% input$months) %>%
-            filter(weekday %in% input$days) %>%
-            filter(Incident_Type %in% input$force) %>%
-            filter(Subject_Gender %in% input$gender) %>%
-            filter(Subject_Race %in% input$race) %>%
-            filter(Precinct %in% input$precinct) %>%
-            filter(Sector %in% input$sector) %>%
-            filter(Beat %in% input$beat) %>%
+        Use_Of_Force_fbh <- generate_df() %>%
             group_by(hour, Incident_Type) %>%
             summarise(count = n())
         
-        p <- ggplot(data = Use_Of_Force, mapping = aes(x = hour, y = count, color = Incident_Type)) 
+        p <- ggplot(data = Use_Of_Force_fbh, mapping = aes(x = hour, y = count, color = Incident_Type))
         
         p + geom_line() + 
             scale_x_continuous(breaks = seq(0,23, by = 1)) +
