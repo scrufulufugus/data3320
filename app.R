@@ -224,9 +224,10 @@ server <- function(input, output, session) {
         )
     })
     output$forceByHour <- renderPlot({
+
+      Use_Of_Force <<- generate_df()
         
-        
-        Use_Of_Force_fbh <- generate_df() %>%
+        Use_Of_Force_fbh <- Use_Of_Force %>%
             group_by(hour, Incident_Type) %>%
             summarise(count = n())
         
