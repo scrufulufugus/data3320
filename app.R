@@ -16,21 +16,82 @@ library(readr)
 library(tidyverse)
 library(lubridate)
 
-# Load Data
-Use_Of_Force <- read_csv("Use_Of_Force.csv")
+# Define our main dataframe
+structure <- data.frame(ID = character(),
+                        Incident_Num = double(),
+                        Incident_Type = character(),
+                        Occured_date_time = POSIXct(),
+                        Precinct = character(),
+                        Sector = character(),
+                        Beat = character(),
+                        Officer_ID = double(),
+                        Subject_ID = double(),
+                        Subject_Race = character(),
+                        Subject_Gender = character())
 
-# Create New column with POSIX date time format from given date time in character format
-Use_Of_Force$new_occured_date_time <- mdy_hms(Use_Of_Force$Occured_date_time)
+PAGE_SIZE <- 5000 # How big we want each page to be
+index <- 0 # The last processed record
+
+query_api <- function(df) {
+  repeat {
+      query <- paste("https://data.seattle.gov/resource/ppi5-g2bj.csv?",
+                     "$order=uniqueid&",
+                     "$limit=", PAGE_SIZE,
+                     "&$offset=", index, sep = "")
+
+      # Load a page of the dataset, also do some error handling so a network
+      #  timeout during a refresh does not take out the application
+      error_bit <- FALSE
+      df_page <- tryCatch({ read_csv(query) },
+                          error = function(err) {
+                            error_bit <<- TRUE
+                          })
+      #df_page <- read_csv(query)
+
+      # DEBUG: Shows current index and new indexed rows, -1 implies network error
+      message("`df_page`: Current index is ", index, "; adding ",
+              ifelse(is.data.frame(df_page), nrow(df_page), -1), " new rows")
+
+      # If the current page is blank or there was an error: break the loop
+      if (error_bit || nrow(df_page) == 0) {
+        break
+      }
+
+      # Rename column to match old csv
+      df_page <- df_page %>%
+        rename(ID = uniqueid,
+               Incident_Num = incident_num,
+               Incident_Type = incident_type,
+               Occured_date_time = occured_date_time,
+               Precinct = precinct,
+               Sector = sector,
+               Beat = beat,
+               Officer_ID = officer_id,
+               Subject_ID = subject_id,
+               Subject_Race = subject_race,
+               Subject_Gender = subject_gender)
+
+      # Bind our new data to the end of the main dataframe and remove duplicates (just incase)
+      df <- distinct(rbind(df, df_page), ID, .keep_all = TRUE)
+
+      # Increment index to the tail of df
+      index <<- nrow(df)
+    }
+  return(df)
+}
+
+# Load Data
+Use_Of_Force <- query_api(structure)
 
 # Create New colums for year, month, day, hour, date from POSIX date time column
-Use_Of_Force <- Use_Of_Force %>% 
-    mutate(year = year(new_occured_date_time),
-           month = month(new_occured_date_time, label = TRUE), 
-           day = wday(new_occured_date_time, label = TRUE), 
-           hour = hour(new_occured_date_time),
-           date = as.Date(new_occured_date_time, format="%Y/%m/%d"),
-           weekday = strftime(new_occured_date_time, format="%A", "UTC"),
-           monthName = strftime(new_occured_date_time, format="%B", "UTC")) 
+Use_Of_Force <- Use_Of_Force %>%
+    mutate(year = year(Occured_date_time),
+           month = month(Occured_date_time, label = TRUE),
+           day = wday(Occured_date_time, label = TRUE),
+           hour = hour(Occured_date_time),
+           date = as_date(Occured_date_time),
+           weekday = strftime(Occured_date_time, format="%A", "UTC"),
+           monthName = strftime(Occured_date_time, format="%B", "UTC"))
 Use_Of_Force$Incident_Type[Use_Of_Force$Incident_Type=="Level 1 - Use of Force"]<-"Level 1: Temporary Pain"
 Use_Of_Force$Incident_Type[Use_Of_Force$Incident_Type=="Level 2 - Use of Force"]<-"Level 2: Physical Injury"
 Use_Of_Force$Incident_Type[Use_Of_Force$Incident_Type=="Level 3 - Use of Force"]<-"Level 3: Substantial Injury"
@@ -127,10 +188,6 @@ ui <- dashboardPage(
             ),
             actionButton("resetForce", label = "Reset")
         )
-        
-        
-        
-        
     ),
     dashboardBody(
         plotOutput('forceByHour') 
@@ -138,6 +195,7 @@ ui <- dashboardPage(
 )
 
 server <- function(input, output, session) {
+
     output$menu <- renderMenu({
         sidebarMenu(
             menuItem("Menu item", icon = icon("calendar"))
