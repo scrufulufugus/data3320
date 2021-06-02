@@ -100,46 +100,37 @@ derive_columns <- function(df) {
 
 Use_Of_Force <- derive_columns(query_api())
 
-ForceLevels <- c("Level 1: Temporary Pain", "Level 2: Physical Injury", "Level 3: Substantial Injury", "Level 3 (IOS): Officer Involved Shooting")
-Weekdays <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday","Saturday","Sunday")
-Months <- c("January", "February", "March", "April", "May","June","July", "August","September","October","November","December")
-Gender <- c("Female","Male", "Not Specified")
-Race <- c("American Indian/Alaska Native","Asian","Black or African American","Hispanic or Latino","Nat Hawaiian/Oth Pac Islander","Not Specified","White")
-Precinct <- c("X","West","Southwest","South","OOJ","North","East","0","-")
-Sector <- c("BOY","CHARLIE","DAVID","EDWARD","FRANK",'GEORGE',"JOHN","KING","LINCOLN","MARY","NORA","OCEAN","QUEEN","ROBERT","SAM","UNION","WILLIAM","")
-Beat <- c("-","0","99","B1","B2","B3","C1","C2","C3","D1","D2","D3","E1","E2","E3","F1","F2","F3","XX")
-
 ui <- dashboardPage(
-    dashboardHeader(title = "Use of Force in Seattle"),
-    dashboardSidebar(
-        sidebarMenu(
-            menuItem("Filter by Date and Time", icon = icon("calendar"), startExpanded = FALSE,
-                     dateRangeInput(inputId = 'date',
-                                    label = 'Filter by Date',
-                                    min = min(Use_Of_Force$date), max = max(Use_Of_Force$date),
-                                    width = "100%",
-                                    start = min(Use_Of_Force$date),
-                                    end = max(Use_Of_Force$date)
+  dashboardHeader(title = "Use of Force in Seattle"),
+  dashboardSidebar(
+    sidebarMenu(
+      menuItem("Filter by Date and Time", icon = icon("calendar"), startExpanded = FALSE,
+               dateRangeInput(inputId = 'date',
+                              label = 'Filter by Date',
+                              min = min(Use_Of_Force$date), max = max(Use_Of_Force$date),
+                              width = "100%",
+                              start = min(Use_Of_Force$date),
+                              end = max(Use_Of_Force$date)
                      ),
                      checkboxGroupInput(inputId = 'months',
-                                        label = "Filter by Month",
-                                        choices = Months, 
-                                        selected = Months
+                                         label = "Filter by Month",
+                                        choices = unique(Use_Of_Force$monthName),
+                                        selected = unique(Use_Of_Force$monthName)
                                         
                      ),
                      actionButton("resetMonths", label = "Reset"),
                      
                      checkboxGroupInput(inputId = 'days',
                                         label = "Filter by Weekday",
-                                        choices = Weekdays, 
-                                        selected = Weekdays
+                                        choices = unique(Use_Of_Force$weekday),
+                                        selected = unique(Use_Of_Force$weekday),
                      ), 
                      actionButton("resetWeekdays", label = "Reset"),
                      sliderInput(inputId = 'hour',
                                  label = 'Filter by Hour',
                                  min = min(Use_Of_Force$hour), 
                                  max = max(Use_Of_Force$hour),
-                                 value= c(min(Use_Of_Force$hour),max(Use_Of_Force$hour)),  
+                                 value = c(min(Use_Of_Force$hour),max(Use_Of_Force$hour)),
                                  width = "100%",
                                  step = 1
                      )
@@ -147,14 +138,14 @@ ui <- dashboardPage(
             menuItem("Filter by Demographs", icon = icon("user"), startExpanded = FALSE,
                      checkboxGroupInput(inputId = 'gender',
                                         label = "Filter by Gender",
-                                        choices = Gender, 
-                                        selected = Gender
+                                        choices = unique(Use_Of_Force$Subject_Gender),
+                                        selected = unique(Use_Of_Force$Subject_Gender)
                      ),
                      actionButton("resetGender", label = "Reset"),
                      checkboxGroupInput(inputId = 'race',
                                         label = "Filter by Race",
-                                        choices = Race, 
-                                        selected = Race 
+                                        choices = unique(Use_Of_Force$Subject_Race),
+                                        selected = unique(Use_Of_Force$Subject_Race),
                      ),
                      actionButton("resetRace", label = "Reset")
             ),
@@ -162,32 +153,32 @@ ui <- dashboardPage(
                      menuItem("Filter by Precinct",  startExpanded = FALSE,
                               checkboxGroupInput(inputId = 'precinct',
                                                  label = "",
-                                                 choices = Precinct, 
-                                                 selected = Precinct
+                                                 choices = unique(Use_Of_Force$Precinct),
+                                                 selected = unique(Use_Of_Force$Precinct)
                               ),
                               actionButton("resetPrecinct", label = "Reset")
                      ),
                      menuItem("Filter by Sector",  startExpanded = FALSE,
                               checkboxGroupInput(inputId = 'sector',
                                                  label = "",
-                                                 choices = Sector, 
-                                                 selected = Sector
+                                                 choices = unique(Use_Of_Force$Sector),
+                                                 selected = unique(Use_Of_Force$Sector)
                               ),
                               actionButton("resetSector", label = "Reset")
                      ),
                      menuItem("Filter by Beat",  startExpanded = FALSE,
                               checkboxGroupInput(inputId = 'beat',
                                                  label = "",
-                                                 choices = Beat, 
-                                                 selected = Beat
+                                                 choices = unique(Use_Of_Force$Beat),
+                                                 selected = unique(Use_Of_Force$Beat)
                               ),
                               actionButton("resetBeat", label = "Reset")
                      )
             ),
             checkboxGroupInput(inputId = 'force',
                                label = "Filter by Type of Force",
-                               choices = ForceLevels, 
-                               selected = ForceLevels 
+                               choices = unique(Use_Of_Force$Incident_Type),
+                               selected = unique(Use_Of_Force$Incident_Type)
             ),
             actionButton("resetForce", label = "Reset")
         )
