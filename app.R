@@ -1,20 +1,6 @@
-# Note: Hi Mia, I finished setting up the filter buttons... for now.
-#       So far I have just added the one graph and added sliders and check boxes
-#       (mostly check boxes) for all the possible filtering that could be done.
-#       But depending on what the groups are doing for their graphs our current
-#       set up might change.
-#       I also asked the prof for advice on setup and so far he has suggested a
-#       way to more easily select a single box without having to uncheck all the
-#       other ones too.
-#       I added select all / reset buttons for all the check box groups to make
-#       that possible.
-#       Feel free to change and add anything...
-
 library(shiny)
 library(shinydashboard)
-library(readr)
 library(tidyverse)
-library(skimr)
 library(lubridate)
 
 # Define our main dataframe structure
