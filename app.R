@@ -16,7 +16,7 @@ raw_data <- data.frame(ID = character(),
                        Subject_Race = character(),
                        Subject_Gender = character())
 
-PAGE_SIZE <- 5000 # How big we want each page to be
+PAGE_SIZE <- 15000 # How big we want each page to be
 index <- 0 # The last processed record
 
 query_api <- function() {
@@ -101,15 +101,6 @@ Race <- unique(Use_Of_Force$Subject_Race)
 Gender <- unique(Use_Of_Force$Subject_Gender)
 Weekdays <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday","Saturday","Sunday")
 Months <- c("January", "February", "March", "April", "May","June","July", "August","September","October","November","December")
-
-force.data <- Use_Of_Force %>%
-    mutate(Incident_Type = as.factor(Incident_Type)) %>%
-    #mutate(Occured_date_time = parse_datetime(Occured_date_time, format="%m/%d/%Y %I:%M:%S %p", locale=)) %>%
-    mutate(Precinct = as.factor(Precinct)) %>%
-    mutate(Sector = as.factor(Sector)) %>%
-    mutate(Beat = as.factor(Beat)) %>%
-    mutate(Subject_Race = as.factor(Subject_Race)) %>%
-    mutate(Subject_Gender = as.factor(Subject_Gender)) 
 
 ### static data starts
     # Create test data.
