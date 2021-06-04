@@ -2,6 +2,8 @@ library(shiny)
 library(shinydashboard)
 library(tidyverse)
 library(lubridate)
+library(dashboardthemes)
+
 
 # Define our main dataframe structure
 raw_data <- data.frame(ID = character(),
@@ -15,6 +17,9 @@ raw_data <- data.frame(ID = character(),
                        Subject_ID = double(),
                        Subject_Race = character(),
                        Subject_Gender = character())
+
+colors_force <- c("#FF101F","#D8274C","#9E488F","#6369D1")
+colors_demographics <- c("#EDDB1D", "#FF540A", "#00C685", "#FAB700", "#555555", "#77D151", "#FD8605")
 
 PAGE_SIZE <- 15000 # How big we want each page to be
 index <- 0 # The last processed record
@@ -206,6 +211,7 @@ ui <- dashboardPage(
         )
     ),
     dashboardBody(
+      shinyDashboardThemes(theme = "grey_dark"),
         plotOutput('forceByHour'),
         fluidRow(
             box(status = "warning", plotOutput('distributionByRace')),
@@ -256,7 +262,8 @@ server <- function(input, output, session) {
         
         p + geom_line() + 
             scale_x_continuous(breaks = seq(0,23, by = 1)) +
-            labs(x = "Hour", y = "Count of Incidents")
+            labs(x = "Hour", y = "Count of Incidents") + 
+            scale_color_manual(values = colors_force)
     })
     output$forceByOfficer <- renderPlot({
         
@@ -298,7 +305,8 @@ server <- function(input, output, session) {
       annotate("text", label = "753,675", x = 2, y = 0)+
       xlim(c(2, 4))+ # Try to remove that to see how to make a pie chart
       theme_void() + ggtitle("Seattle Race Demographics") +
-      theme(plot.title = element_text(hjust = 0.5))
+      theme(plot.title = element_text(hjust = 0.5))+
+      scale_fill_manual(values = colors_demographics)
     })
     output$distributionByRace <- renderPlot({
         
@@ -345,7 +353,8 @@ server <- function(input, output, session) {
             annotate("text", label = sum(df_percentage$n), x = 2, y = 0) +
             xlim(c(2, 4)) + # Try to remove that to see how to make a pie chart
             theme_void() +
-            labs(title = "Distribution by Race (Demographics)")
+            labs(title = "Distribution by Race (Demographics)")+
+            scale_fill_manual(values = colors_demographics)
     })
     observeEvent(
         input$resetMonths, {
