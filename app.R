@@ -220,6 +220,9 @@ ui <- dashboardPage(
         fluidRow(
             box(status = "warning", plotOutput('forceByOfficer')),
             box(status = "warning", plotOutput('forceByIncident'))
+        ),
+        fluidRow(
+          box(status = "warning", plotOutput('reportsPerOfficer'))
         )
     )
 )
@@ -357,6 +360,16 @@ server <- function(input, output, session) {
             theme_void() +
             labs(title = "Distribution by Race (Demographics)")+
             scale_fill_manual(values = colors_demographics)
+    })
+    output$reportsPerOfficer <- renderPlot({
+      generate_df() %>%
+        mutate(Officer_ID = as.character(Officer_ID)) %>%
+        count(Officer_ID) %>%
+        mutate(Officer_ID = fct_reorder(Officer_ID, n, .desc = FALSE)) %>%
+        top_n(25, Officer_ID) %>%
+        ggplot(aes(x = n, y = Officer_ID)) +
+        geom_col() +
+        labs(x = "Number of Incidents Reported", y = "Officer ID")
     })
     observeEvent(
         input$resetMonths, {
