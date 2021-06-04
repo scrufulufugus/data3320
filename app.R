@@ -267,8 +267,9 @@ server <- function(input, output, session) {
             summarize(n = n()) %>%
             ggplot(mapping = aes(x = n)) +
             geom_histogram(binwidth=2) +
-            labs(title="Histogram of Total Number of Subjects Force Was Used On by Officer", y = "Count", x = "Officer's Number of Incidents") +
-            theme_bw()
+            labs(title="Number of Subjects by Officer", y = "Count of\nOfficers", x = "Number of Subjects") +
+            theme_bw() +
+            theme(axis.title.y=element_text(angle=0, vjust=0.5))
     })
     output$forceByIncident <- renderPlot({
         
@@ -285,8 +286,9 @@ server <- function(input, output, session) {
         officer_summary %>%
             ggplot(aes(x = mean_subjects_per_incident, y = total_subjects)) + 
             geom_point() +
-            labs(title="Use of Force is Driven By Many Small Incidents, Not By Large Incidents", x="Mean Number of Subjects in Incident Per Officer", y="Total Number of Subjects in per Officer") +
-            theme_bw()
+            labs(title="Number of Subjects versus Mean Incident Size by Officer", x="Mean Number of Subjects per Incident", y="Number of\nSubjects") +
+            theme_bw() +
+            theme(axis.title.y=element_text(angle=0, vjust=0.5))
     })
     output$staticDemographics <- renderPlot({
         
