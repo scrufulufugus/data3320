@@ -290,13 +290,13 @@ server <- function(input, output, session) {
     })
     output$staticDemographics <- renderPlot({
         
-        ggplot(data, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=category)) +
-            geom_rect() +
-            coord_polar(theta="y") + # Try to remove that to understand how the chart is built initially
-            annotate("text", label = "753,675", x = 2, y = 0)+
-            xlim(c(2, 4))+ # Try to remove that to see how to make a pie chart
-            theme_void() +
-            labs(title = "Seattle Race Demographics")
+    ggplot(data, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=Race)) +
+      geom_rect() +
+      coord_polar(theta="y") + # Try to remove that to understand how the chart is built initially
+      annotate("text", label = "753,675", x = 2, y = 0)+
+      xlim(c(2, 4))+ # Try to remove that to see how to make a pie chart
+      theme_void() + ggtitle("Seattle Race Demographics") +
+      theme(plot.title = element_text(hjust = 0.5))
     })
     output$distributionByRace <- renderPlot({
         
