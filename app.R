@@ -112,27 +112,6 @@ force.data <- Use_Of_Force %>%
     mutate(Subject_Gender = as.factor(Subject_Gender)) 
 
 ### static data starts
-    seattle_data <- read.csv('seattle.csv')
-    seattle_race_data <- seattle_data
-    #select(seattle_race_data, -c(Fact.Note,Value.Note.for.Seattle.city..Washington))
-    test<- subset(seattle_race_data,
-                  seattle_race_data$Fact=="Black or African American alone, percent" | 
-                      seattle_race_data$Fact=="American Indian and Alaska Native alone, percent" |
-                      seattle_race_data$Fact=="Asian alone, percent" |
-                      seattle_race_data$Fact=="Native Hawaiian and Other Pacific Islander alone, percent"|
-                      seattle_race_data$Fact=="Two or More Races, percent"|
-                      seattle_race_data$Fact=="Hispanic or Latino, percent"|
-                      seattle_race_data$Fact=="White alone, not Hispanic or Latino, percent")
-    test$Seattle.city..Washington= as.numeric(gsub("[\\%,]", "", test$Seattle.city..Washington))
-    
-    new_colnames <- c("Variable", "Variable Note", "Value", "Value Note")
-    
-    colnames(test) <- new_colnames
-    
-    new_rownames <- c("African American", "Native American", "Asian", "Hawaiian and Other Pacific Islander","Two or More Races","Hispanic or Latino", "White")
-    rownames(test) <- new_rownames 
-    
-    # load library
     # Create test data.
     data <- data.frame(
         category=c("Native American", "Asian", "Black", "Pacific Islander","Hispanic", "Two or More Races", "White"),
@@ -149,7 +128,6 @@ force.data <- Use_Of_Force %>%
     data$ymin = c(0, head(data$ymax, n=-1))
 
 ### static data ends
-
 
 ui <- dashboardPage(
     skin = "red",
